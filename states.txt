@@ -1,0 +1,114 @@
+//Code by Kai Hiratani
+//May 6, 2023
+
+//defining var
+char curState;
+
+#define WRITE_HIGH(pin_num) *port_a |= (0x01 << pin_num);
+#define WRITE_LOW(pin_num) *port_a &= ~(0x01 << pin_num);
+
+volatile unsigned char* my_PCICR = (unsigned char*) 0x68;
+volatile unsigned char* my_PCMSK0 = (unsigned char*) 0x6B;
+volatile unsigned char* my_PCIFR = (unsigned char*) 0x3B;
+volatile unsigned char* my_EIMSK = (unsigned char*) 0x3D;
+volatile unsigned char* my_EICRA = (unsigned char*) 0x69;
+volatile unsigned char* my_EICRB = (unsigned char*) 0x6A;
+volatile unsigned char* my_EIFR = (unsigned char*) 0x3C;
+
+volatile unsigned char* port_a= (unsigned char*) 0x22;
+volatile unsigned char* ddr_a= (unsigned char*) 0x21;
+volatile unsigned char* pin_a= (unsigned char*) 0x20;
+
+void setup(){
+    Serial.begin(9600);
+    //setting start to false and state to disabled until the button is pushed
+    curState = "d";
+
+    *ddr_a &= 0b00001111;
+    *port_a |= 0b11110000;
+
+    ISR_config();
+}
+
+void running(){
+  //turn on blue and everything else off
+  WRITE_HIGH(2);
+  WRITE_LOW(0);
+  WRITE_LOW(1);
+  WRITE_LOW(3);
+
+  //curState();
+
+}
+
+void disabled(){
+  //turn on yellow and everything else off
+  WRITE_HIGH(3);
+  WRITE_LOW(0);
+  WRITE_LOW(1);
+  WRITE_LOW(2);
+
+  //curState();
+
+}
+
+void idle(){
+  //turn on green and everything else off
+  WRITE_HIGH(0);
+  WRITE_LOW(1);
+  WRITE_LOW(2);
+  WRITE_LOW(3);
+
+  //curState();
+
+}
+
+void error(){
+    //turn on red and everything else off
+    WRITE_HIGH(1);
+    WRITE_LOW(0);
+    WRITE_LOW(2);
+    WRITE_LOW(3);
+
+    //curState();
+
+}
+
+void stateSel(){
+    if(curState == "d"){
+        disabled();
+    }
+    if(curState == "r"){
+        running();
+    }
+    if(curState == "i"){
+        idle();
+    }
+    if(curState == "e"){
+        error();
+    }
+}
+
+void changeState(){
+    Serial.println("Changed to " + curState + "state.");
+}
+
+ISR(PCINT0_vect)
+{
+  if(curState == "d"){
+    curState = "i";
+  }
+  else{
+    curState = "d";
+  }
+}
+
+void ISR_config() {
+  *my_PCICR |= (1<<PCIE0);
+  PCMSK0 |= (1<<PCINT0);
+}
+
+void loop(){
+  stateSel();
+  delay(50);
+}

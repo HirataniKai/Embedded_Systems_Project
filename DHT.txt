@@ -1,0 +1,32 @@
+//Code by Kai Hiratani
+//May 6, 2023
+
+#include <DHT.h>
+
+//sets pin and chooses device
+DHT dht(6, DHT11);
+
+void setup(){
+    Serial.begin(9600);
+    dht.begin();
+}
+
+void loop(){
+    //reads the temp and humidity from the dht device
+    float hum = dht.readHumidity();
+    float temp= dht.readTemperature();
+
+    //convert to fahrenheit because dht reads in as celsius
+    float fah = ( temp * 1.8 ) + 32;
+
+    //prints to monitor (not needed in final code. just to test)
+    Serial.print("Temp: ");
+    Serial.print(fah);
+    //Print degree symbol
+    Serial.write(176); 
+    Serial.println("F");
+
+    Serial.print("Humidity: ");
+    Serial.print(hum);
+    Serial.println("%")
+}
